@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 
-const DIR_NAME: &str = "simple";
+const DIR_NAME: &str = "simple_client";
 const FILE_NAME: &str = "btc_data.json";
 
 #[derive(Serialize, Deserialize, Debug)]
