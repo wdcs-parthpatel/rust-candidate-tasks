@@ -3,7 +3,6 @@ mod file;
 use clap::{Arg, Command};
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, Mutex};
 
 const WEB_SOCKET_URL_BTC: &str = "wss://stream.binance.com:443/ws/btcusdt@miniTicker";
 const CONNECTION_TIMEOUT: u64 = 5;
@@ -11,7 +10,7 @@ const CONNECTION_TIMEOUT: u64 = 5;
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
     let matches = Command::new("simple")
-        .about("simple client that can run the two following commands: 1) ./ =10 2) ./simple --mode=read")
+        .about("simple client that can run the two following commands: 1) ./simple --mode=cache --times=10 2) ./simple --mode=read")
         .arg(Arg::new("mode")
             .short('m')
             .long("mode")
@@ -32,7 +31,10 @@ async fn main() {
            let times = matches.get_one::<String>("times").unwrap();
            match times.parse::<usize>() {
                Ok(times) => {
-                   get_btc_price(times).await;
+                   let result = get_btc_price(times).await;
+                   if result.is_err() {
+                       println!("Failed to get btc price: {}", result.err().unwrap());
+                   }
                },
                Err(e) => {
                    println!("Error in times argument: {}",e);
@@ -48,51 +50,47 @@ async fn main() {
    }
 }
 
-async fn get_btc_price(times: usize) {
+async fn get_btc_price(times: usize) -> Result<(), Box<dyn std::error::Error>> {
     let connection = tokio_tungstenite::connect_async(WEB_SOCKET_URL_BTC);
     let timeout_duration = tokio::time::Duration::from_secs(CONNECTION_TIMEOUT);
-    let result = tokio::time::timeout(timeout_duration, connection).await;
-    match result {
-        Ok(connection) => {
-            if connection.is_ok() {
-                let (stream, _response) = connection.ok().unwrap();
-                let (_write, read) = stream.split();
-                let prices = Arc::new(Mutex::new(Vec::new()));
-                read.take(times).for_each(|msg| {
-                    let prices = prices.clone();
-                    async move {
-                        if msg.is_ok() {
-                            let message = msg.ok().unwrap().to_string();
-                            let btc_ticker = serde_json::from_str::<BtcTicker>(message.as_str());
-                            if btc_ticker.is_ok() {
-                                let price = btc_ticker.ok().unwrap().c.parse::<f64>().unwrap();
-                                prices.lock().unwrap().push(price);
-                                println!("Received btc Price: {}", price);
-                            } else {
-                                println!("Error in deserializing: {:?}", btc_ticker.err().unwrap());
-                            }
-                        } else {
-                            println!("Error in message: {:?}", msg.err().unwrap());
-                        }
-                    }
-                }).await;
-                let data: Vec<f64> = prices.lock().unwrap().iter().map(|x| *x).collect();
-                let average = data.iter().sum::<f64>() / data.len() as f64;
-                let price_data = file::PriceData::new(data, average);
-                file::write_data_to_file(&price_data);
-                println!("Cache complete. The average USD price of BTC is: {}", average);
+    let (stream, _response) = tokio::time::timeout(timeout_duration, connection).await??;
+    let (_write, mut read) = stream.split();
+    let fetch_times = tokio::time::Duration::from_secs(times as u64);
+    let start_time = tokio::time::Instant::now();
+    let mut prices = Vec::new();
+
+    while start_time.elapsed() < fetch_times {
+        if let Some(msg) = read.next().await{
+            let message = msg?.to_string();
+            let btc_ticker = serde_json::from_str::<BtcTicker>(message.as_str());
+            if btc_ticker.is_ok() {
+                let price = btc_ticker.unwrap().c;
+                prices.push(price);
+                println!("Received btc Price: {}", price);
             } else {
-                println!("Error connecting to the websocket {}", connection.err().unwrap());
+                println!("Failed to get btc price: {}", btc_ticker.err().unwrap());
             }
-        },
-        Err(_) => {
-            println!("WebSocket connection timed out.");
-        }       
+        }
     }
+    let average = prices.iter().sum::<f64>() / prices.len() as f64;
+    let price_data = file::PriceData::new(prices, average);
+    file::write_data_to_file(&price_data);
+    println!("Cache complete. The average USD price of BTC is: {}", average);
+    Ok(())
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct BtcTicker {
     s: String,
-    c: String,
+    #[serde(deserialize_with = "de_string_to_f64")]
+    c: f64,
+}
+
+// Custom deserializer function
+fn de_string_to_f64<'de, D>(deserializer: D) -> Result<f64, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s: &str = Deserialize::deserialize(deserializer)?;
+    s.parse::<f64>().map_err(serde::de::Error::custom)
 }
