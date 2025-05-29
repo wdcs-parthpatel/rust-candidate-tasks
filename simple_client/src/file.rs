@@ -7,7 +7,7 @@ const FILE_NAME: &str = "btc_data.json";
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PriceData {
     prices: Vec<f64>,
-    average: f64,
+    pub average: f64,
 }
 
 impl PriceData {

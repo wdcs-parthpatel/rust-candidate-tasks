@@ -1,0 +1,27 @@
+[
+  {
+    "client_id": "client1",
+    "public": "eeb3ab668738835f08034015f9e39fa2f9bac2f2dd646c1a259b7f4c2cee120f",
+    "private": "d633d86ef64fcb4d0706c3822949d76bdc870fca46f39265d0b72e1244e3db2b"
+  },
+  {
+    "client_id": "client2",
+    "public": "21e786f00887fd6269305ac202354f11c5da5a13477395fe274d6bb8c8daecb3",
+    "private": "4464dccf011d491dd51f43d4cf1b69cec8860489b348b0f329a4f7b34cbf8f69"
+  },
+  {
+    "client_id": "client3",
+    "public": "ff04cd74da4525c16577e5830cadcefc8a3e2658fb1c4a34acd255d43883eabf",
+    "private": "147359bd4a2a46c05c75811c9db3b8e50aaa9e480c7574ddd5429af7d78e2e05"
+  },
+  {
+    "client_id": "client4",
+    "public": "1eb12a33377b38b94fed1d77469749284b983ddf4540eda57cc8d284c065d01f",
+    "private": "b63b11faf8a7796b55122fe6d576abc814c7d01ea2a49f0c001401bdcd57f2e6"
+  },
+  {
+    "client_id": "client5",
+    "public": "7f13978c46796c10ac72dd7385d3d0447bf3d11715517ebeefa870420714aa23",
+    "private": "f334ca8ee53f6a2b0d1ce4a5ea4e69b99d0bb397697b1503caa02eb1f5234b14"
+  }
+]
