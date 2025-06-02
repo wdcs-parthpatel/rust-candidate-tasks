@@ -1,0 +1,17 @@
+[package]
+name = "tic_tac_toe"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "client"
+path = "src/main.rs"
+
+[[bin]]
+name = "server"
+path = "src/server.rs"
+
+[dependencies]
+anyhow = "1.0.98"
+colored = "3.0.0"
+tokio = { version = "1.45.1", features = ["full"] }
