@@ -1,11 +1,37 @@
 use std::fs;
 use std::str::FromStr;
+use secp256k1::{Secp256k1, SecretKey, PublicKey};
 use web3::types::{Address, TransactionParameters, U256};
-use secp256k1::SecretKey;
-use web3::Transport;
+use web3::{Transport};
+use web3::transports::{Http};
 use tiny_keccak::{Hasher, Keccak};
 
 const WALLET_FILE: &str = "wallet.json";
+const RPC_URL: &str = "https://sepolia.infura.io/v3/ddf3c68b62f849feb5aa8e01c80c0caa";
+const TO_WALLET_ADDRESS: &str = "0xE689CE731843944B64F687a442422a7f850aB9Ac";
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let transport_http = Http::new(RPC_URL)?;
+    let web3 = web3::Web3::new(transport_http);
+    println!("Connected to Ethereum node");
+
+    let secret_key = create_or_load_wallet().await?;
+    println!("Private key: {}", secret_key.display_secret());
+
+    let wallet_address = get_wallet_address(&secret_key);
+    println!("Wallet Address: 0x{:x}", wallet_address);
+    
+    let balance = get_balance(&web3, wallet_address).await?;
+    println!("Balance: {} Wei", balance);
+    println!("Balance: {} ETH", wei_to_eth(balance));
+
+    let to_address = Address::from_str(TO_WALLET_ADDRESS)?;
+    let amount = U256::from(1_000_000_000_000_000u128); // 0.001 ETH
+    let tx_hash = send_eth(&web3, &secret_key, wallet_address, to_address, amount).await?;
+    println!("Transaction sent: {:?}", tx_hash);
+    Ok(())
+}
 
 #[derive(serde::Serialize, serde::Deserialize)]
 struct Wallet {
@@ -15,101 +41,61 @@ struct Wallet {
 async fn create_or_load_wallet() -> Result<SecretKey, Box<dyn std::error::Error>> {
     if let Ok(content) = fs::read_to_string(WALLET_FILE) {
         let wallet: Wallet = serde_json::from_str(&content)?;
-        let private_key = SecretKey::from_str(&wallet.private_key)?;
-        Ok(private_key)
+        let secret_key = SecretKey::from_str(&wallet.private_key)?;
+        Ok(secret_key)
     } else {
-        let mut rng = rand::thread_rng();
-        let secp = secp256k1::Secp256k1::new();
-        let private_key = secp.generate_keypair(&mut rng).0;
-
-        // Save to file
+        let mut rng = rand::rngs::OsRng;
+        let secp = Secp256k1::new();
+        let (secret_key, _public_key) = secp.generate_keypair(&mut rng);
         let wallet = Wallet {
-            private_key: private_key.display_secret().to_string(),
+            private_key: secret_key.display_secret().to_string(),
         };
         let json = serde_json::to_string(&wallet)?;
         fs::write(WALLET_FILE, json)?;
-
-        Ok(private_key)
+        Ok(secret_key)
     }
+}
+
+fn get_wallet_address(secret_key: &SecretKey) -> Address {
+    let public_key = PublicKey::from_secret_key(&Secp256k1::new(), &secret_key);
+    let public_key = public_key.serialize_uncompressed();
+    let public_key = &public_key[1..];
+    let mut hasher = Keccak::v256();
+    hasher.update(public_key);
+    let mut output = [0u8; 32];
+    hasher.finalize(&mut output);
+    Address::from_slice(&output[12..])
 }
 
 async fn get_balance(web3: &web3::Web3<impl Transport>, address: Address) -> Result<U256, web3::Error> {
     web3.eth().balance(address, None).await
 }
 
-fn public_key_to_address(public_key: &secp256k1::PublicKey) -> Address {
-    let public_key = public_key.serialize_uncompressed();
-    // Remove the first byte (0x04) which indicates an uncompressed public key
-    let public_key = &public_key[1..];
-
-    // Keccak-256 hash of the public key
-    let mut hasher = Keccak::v256();
-    hasher.update(public_key);
-    let mut output = [0u8; 32];
-    hasher.finalize(&mut output);
-
-    // Take the last 20 bytes as ethereum address
-    Address::from_slice(&output[12..])
+fn wei_to_eth(wei: U256) -> f64 {
+    let base = 1e18;
+    let wei_f64 = wei.as_u128() as f64;
+    wei_f64 / base
 }
 
 async fn send_eth(
     web3: &web3::Web3<impl Transport>,
-    from_private_key: &SecretKey,
+    from_secret_key: &SecretKey,
+    from_address: Address,
     to_address: Address,
     amount: U256,
 ) -> Result<web3::types::H256, web3::Error> {
-    let public_key = secp256k1::PublicKey::from_secret_key(
-        &secp256k1::Secp256k1::new(),
-        from_private_key,
-    );
-    let from_address = public_key_to_address(&public_key);
-
     let nonce = web3.eth().transaction_count(from_address, None).await?;
-
+    println!("nonce: {:?}", nonce);
+    let gas_price = web3.eth().gas_price().await?;
+    println!("gas_price: {:?}", gas_price);
     let transaction = TransactionParameters {
-        to: Some(to_address),
-        value: amount,
         nonce: Some(nonce),
+        to: Some(to_address),
         gas: U256::from(21000),
-        gas_price: Some(web3.eth().gas_price().await?),
+        gas_price: Some(gas_price),
+        value: amount,
         ..Default::default()
     };
-
-    let signed = web3.accounts().sign_transaction(transaction, from_private_key).await?;
+    let signed = web3.accounts().sign_transaction(transaction, from_secret_key).await?;
     web3.eth().send_raw_transaction(signed.raw_transaction).await
-}
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Connect to an Ethereum node (replace URL with your node)
-    let transport = web3::transports::Http::new(
-        "https://sepolia.infura.io/v3/ddf3c68b62f849feb5aa8e01c80c0caa"
-    )?;
-    let web3 = web3::Web3::new(transport);
-    println!("Connected to Ethereum node");
-
-    let private_key = create_or_load_wallet().await?;
-    println!("Private key: {}", private_key.display_secret());
-
-    let public_key = secp256k1::PublicKey::from_secret_key(
-        &secp256k1::Secp256k1::new(),
-        &private_key
-    );
-    println!("Public key: {}", public_key);
-
-    let address = public_key_to_address(&public_key);
-    println!("Wallet Address: 0x{:x}", address);
-    let address = Address::from_str("0xf11cF0AC883B42116006eF5AcDB5fDD34a766a75")?;
-    
-    // Get balance
-    let balance = get_balance(&web3, address).await?;
-    println!("Balance: {} Wei", balance);
-
-
-    // Example: Send ETH (uncomment and modify as needed)
-    let to_address = Address::from_str("0x742d35Cc6634C0532925a3b844Bc454e4438f44e")?;
-    let amount = U256::from(1000000000000000000u64); // 1 ETH
-    let tx_hash = send_eth(&web3, &private_key, to_address, amount).await?;
-    println!("Transaction sent: {:?}", tx_hash);
-    Ok(())
 }
