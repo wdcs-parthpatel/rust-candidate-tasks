@@ -27,3 +27,6 @@ Thumbs.db
 
 # Optional: if using dotenv
 .env
+
+# code gen files
+/src/generated/*.rs
