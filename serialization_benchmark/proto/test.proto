@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+message ProtoData {
+    uint32 id = 1;
+    string name = 2;
+    bool flag = 3;
+}
