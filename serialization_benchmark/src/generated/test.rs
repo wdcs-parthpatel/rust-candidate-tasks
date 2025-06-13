@@ -28,12 +28,18 @@ const _PROTOBUF_VERSION_CHECK: () = ::protobuf::VERSION_3_7_2;
 #[derive(PartialEq,Clone,Default,Debug)]
 pub struct ProtoData {
     // message fields
-    // @@protoc_insertion_point(field:ProtoData.id)
-    pub id: u32,
-    // @@protoc_insertion_point(field:ProtoData.name)
-    pub name: ::std::string::String,
-    // @@protoc_insertion_point(field:ProtoData.flag)
-    pub flag: bool,
+    // @@protoc_insertion_point(field:ProtoData.first_name)
+    pub first_name: ::std::string::String,
+    // @@protoc_insertion_point(field:ProtoData.middle_name)
+    pub middle_name: ::std::string::String,
+    // @@protoc_insertion_point(field:ProtoData.last_name)
+    pub last_name: ::std::string::String,
+    // @@protoc_insertion_point(field:ProtoData.birth_date)
+    pub birth_date: ::std::string::String,
+    // @@protoc_insertion_point(field:ProtoData.age)
+    pub age: u32,
+    // @@protoc_insertion_point(field:ProtoData.is_adult)
+    pub is_adult: bool,
     // special fields
     // @@protoc_insertion_point(special_field:ProtoData.special_fields)
     pub special_fields: ::protobuf::SpecialFields,
@@ -51,22 +57,37 @@ impl ProtoData {
     }
 
     fn generated_message_descriptor_data() -> ::protobuf::reflect::GeneratedMessageDescriptorData {
-        let mut fields = ::std::vec::Vec::with_capacity(3);
+        let mut fields = ::std::vec::Vec::with_capacity(6);
         let mut oneofs = ::std::vec::Vec::with_capacity(0);
         fields.push(::protobuf::reflect::rt::v2::make_simpler_field_accessor::<_, _>(
-            "id",
-            |m: &ProtoData| { &m.id },
-            |m: &mut ProtoData| { &mut m.id },
+            "first_name",
+            |m: &ProtoData| { &m.first_name },
+            |m: &mut ProtoData| { &mut m.first_name },
         ));
         fields.push(::protobuf::reflect::rt::v2::make_simpler_field_accessor::<_, _>(
-            "name",
-            |m: &ProtoData| { &m.name },
-            |m: &mut ProtoData| { &mut m.name },
+            "middle_name",
+            |m: &ProtoData| { &m.middle_name },
+            |m: &mut ProtoData| { &mut m.middle_name },
         ));
         fields.push(::protobuf::reflect::rt::v2::make_simpler_field_accessor::<_, _>(
-            "flag",
-            |m: &ProtoData| { &m.flag },
-            |m: &mut ProtoData| { &mut m.flag },
+            "last_name",
+            |m: &ProtoData| { &m.last_name },
+            |m: &mut ProtoData| { &mut m.last_name },
+        ));
+        fields.push(::protobuf::reflect::rt::v2::make_simpler_field_accessor::<_, _>(
+            "birth_date",
+            |m: &ProtoData| { &m.birth_date },
+            |m: &mut ProtoData| { &mut m.birth_date },
+        ));
+        fields.push(::protobuf::reflect::rt::v2::make_simpler_field_accessor::<_, _>(
+            "age",
+            |m: &ProtoData| { &m.age },
+            |m: &mut ProtoData| { &mut m.age },
+        ));
+        fields.push(::protobuf::reflect::rt::v2::make_simpler_field_accessor::<_, _>(
+            "is_adult",
+            |m: &ProtoData| { &m.is_adult },
+            |m: &mut ProtoData| { &mut m.is_adult },
         ));
         ::protobuf::reflect::GeneratedMessageDescriptorData::new_2::<ProtoData>(
             "ProtoData",
@@ -86,14 +107,23 @@ impl ::protobuf::Message for ProtoData {
     fn merge_from(&mut self, is: &mut ::protobuf::CodedInputStream<'_>) -> ::protobuf::Result<()> {
         while let Some(tag) = is.read_raw_tag_or_eof()? {
             match tag {
-                8 => {
-                    self.id = is.read_uint32()?;
+                10 => {
+                    self.first_name = is.read_string()?;
                 },
                 18 => {
-                    self.name = is.read_string()?;
+                    self.middle_name = is.read_string()?;
                 },
-                24 => {
-                    self.flag = is.read_bool()?;
+                26 => {
+                    self.last_name = is.read_string()?;
+                },
+                34 => {
+                    self.birth_date = is.read_string()?;
+                },
+                40 => {
+                    self.age = is.read_uint32()?;
+                },
+                48 => {
+                    self.is_adult = is.read_bool()?;
                 },
                 tag => {
                     ::protobuf::rt::read_unknown_or_skip_group(tag, is, self.special_fields.mut_unknown_fields())?;
@@ -107,13 +137,22 @@ impl ::protobuf::Message for ProtoData {
     #[allow(unused_variables)]
     fn compute_size(&self) -> u64 {
         let mut my_size = 0;
-        if self.id != 0 {
-            my_size += ::protobuf::rt::uint32_size(1, self.id);
+        if !self.first_name.is_empty() {
+            my_size += ::protobuf::rt::string_size(1, &self.first_name);
         }
-        if !self.name.is_empty() {
-            my_size += ::protobuf::rt::string_size(2, &self.name);
+        if !self.middle_name.is_empty() {
+            my_size += ::protobuf::rt::string_size(2, &self.middle_name);
         }
-        if self.flag != false {
+        if !self.last_name.is_empty() {
+            my_size += ::protobuf::rt::string_size(3, &self.last_name);
+        }
+        if !self.birth_date.is_empty() {
+            my_size += ::protobuf::rt::string_size(4, &self.birth_date);
+        }
+        if self.age != 0 {
+            my_size += ::protobuf::rt::uint32_size(5, self.age);
+        }
+        if self.is_adult != false {
             my_size += 1 + 1;
         }
         my_size += ::protobuf::rt::unknown_fields_size(self.special_fields.unknown_fields());
@@ -122,14 +161,23 @@ impl ::protobuf::Message for ProtoData {
     }
 
     fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream<'_>) -> ::protobuf::Result<()> {
-        if self.id != 0 {
-            os.write_uint32(1, self.id)?;
+        if !self.first_name.is_empty() {
+            os.write_string(1, &self.first_name)?;
         }
-        if !self.name.is_empty() {
-            os.write_string(2, &self.name)?;
+        if !self.middle_name.is_empty() {
+            os.write_string(2, &self.middle_name)?;
         }
-        if self.flag != false {
-            os.write_bool(3, self.flag)?;
+        if !self.last_name.is_empty() {
+            os.write_string(3, &self.last_name)?;
+        }
+        if !self.birth_date.is_empty() {
+            os.write_string(4, &self.birth_date)?;
+        }
+        if self.age != 0 {
+            os.write_uint32(5, self.age)?;
+        }
+        if self.is_adult != false {
+            os.write_bool(6, self.is_adult)?;
         }
         os.write_unknown_fields(self.special_fields.unknown_fields())?;
         ::std::result::Result::Ok(())
@@ -148,17 +196,23 @@ impl ::protobuf::Message for ProtoData {
     }
 
     fn clear(&mut self) {
-        self.id = 0;
-        self.name.clear();
-        self.flag = false;
+        self.first_name.clear();
+        self.middle_name.clear();
+        self.last_name.clear();
+        self.birth_date.clear();
+        self.age = 0;
+        self.is_adult = false;
         self.special_fields.clear();
     }
 
     fn default_instance() -> &'static ProtoData {
         static instance: ProtoData = ProtoData {
-            id: 0,
-            name: ::std::string::String::new(),
-            flag: false,
+            first_name: ::std::string::String::new(),
+            middle_name: ::std::string::String::new(),
+            last_name: ::std::string::String::new(),
+            birth_date: ::std::string::String::new(),
+            age: 0,
+            is_adult: false,
             special_fields: ::protobuf::SpecialFields::new(),
         };
         &instance
@@ -183,9 +237,12 @@ impl ::protobuf::reflect::ProtobufValue for ProtoData {
 }
 
 static file_descriptor_proto_data: &'static [u8] = b"\
-    \n\ntest.proto\"C\n\tProtoData\x12\x0e\n\x02id\x18\x01\x20\x01(\rR\x02id\
-    \x12\x12\n\x04name\x18\x02\x20\x01(\tR\x04name\x12\x12\n\x04flag\x18\x03\
-    \x20\x01(\x08R\x04flagb\x06proto3\
+    \n\ntest.proto\"\xb4\x01\n\tProtoData\x12\x1d\n\nfirst_name\x18\x01\x20\
+    \x01(\tR\tfirstName\x12\x1f\n\x0bmiddle_name\x18\x02\x20\x01(\tR\nmiddle\
+    Name\x12\x1b\n\tlast_name\x18\x03\x20\x01(\tR\x08lastName\x12\x1d\n\nbir\
+    th_date\x18\x04\x20\x01(\tR\tbirthDate\x12\x10\n\x03age\x18\x05\x20\x01(\
+    \rR\x03age\x12\x19\n\x08is_adult\x18\x06\x20\x01(\x08R\x07isAdultb\x06pr\
+    oto3\
 ";
 
 /// `FileDescriptorProto` object which was a source for this generated file
