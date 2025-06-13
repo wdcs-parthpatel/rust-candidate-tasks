@@ -1,0 +1,13 @@
+[package]
+name = "web3_eth_wallet"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+web3 = "0.19"
+tokio = { version = "1.28", features = ["full"] }
+secp256k1 = { version = "0.27" , features = ["rand"] }
+serde_json = "1.0"
+serde = { version = "1.0.219", features = ["derive"] }
+rand = "0.8.5"
+tiny-keccak = { version = "2.0", features = ["keccak"] }
