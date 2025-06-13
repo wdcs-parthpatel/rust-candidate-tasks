@@ -3,7 +3,7 @@ use std::fs;
 use std::io::Write;
 use futures::StreamExt;
 use web3::transports::{WebSocket};
-use web3::types::{Address, FilterBuilder, Log, H160, U256};
+use web3::types::{Address, BlockId, BlockNumber, FilterBuilder, Log, H160, U256};
 use web3::ethabi::{Contract};
 use web3::signing::{keccak256};
 use web3::contract;
@@ -53,13 +53,14 @@ async fn handle_log(log: Log, contract: &contract::Contract<WebSocket>) -> web3:
     println!("Sender address: 0x{:x}", sender);
     println!("block hash: {:?}", log.block_hash);
     println!("block number: {:?}", log.block_number);
-
+    let block_number = BlockNumber::Number(log.block_number.unwrap());
+    let block_id = BlockId::Number(block_number);
     let value: U256 = contract.query(
         "retrieve",
         (),
         None,
         contract::Options::default(),
-        None,
+        block_id,
     ).await.expect("retrieving value failed");
     println!("retrieved value: {}", value);
     log_to_file(value);
