@@ -10,7 +10,7 @@ const WALLET_ADDRESS: &str = "0xb4ebd8ada94410820dfaf2f9c33b405e1df9747c";
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> web3::Result<()> {
     // socket_block_pooling().await?;
-    socket_block_subscribing().await?;
+    subscribe_block().await?;
     Ok(())
 }
 #[allow(unused)]
@@ -38,7 +38,7 @@ async fn socket_block_pooling() -> web3::Result<()> {
 }
 
 #[allow(unused)]
-async fn socket_block_subscribing() -> web3::Result<()> {
+async fn subscribe_block() -> web3::Result<()> {
     let transport_ws = WebSocket::new(WS_URL).await?;
     let web3 = web3::Web3::new(transport_ws);
 
